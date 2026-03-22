@@ -1,0 +1,73 @@
+.mangalens-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #a78bfa;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.mangalens-toggle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(124, 58, 237, 0.9);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 10000;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.mangalens-toggle:hover {
+  background: rgba(109, 40, 217, 0.95);
+}
+
+.mangalens-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 100000;
+  animation: mangalens-slide-in 0.3s ease-out;
+}
+
+.mangalens-info {
+  background: rgba(124, 58, 237, 0.95);
+  color: white;
+}
+
+.mangalens-success {
+  background: rgba(34, 197, 94, 0.95);
+  color: white;
+}
+
+.mangalens-warning {
+  background: rgba(234, 179, 8, 0.95);
+  color: #1f2937;
+}
+
+.mangalens-error {
+  background: rgba(239, 68, 68, 0.95);
+  color: white;
+}
+
+@keyframes mangalens-slide-in {
+  from { transform: translateX(100px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}

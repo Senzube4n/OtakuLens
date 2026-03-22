@@ -1,0 +1,1 @@
+"""MangaLens MCP server package."""
