@@ -20,6 +20,7 @@ from backend.pipeline.analyzer import PreTranslationAnalyzer
 from backend.pipeline.inpainter import InpaintingEngine
 from backend.pipeline.ocr_engine import OCREngine
 from backend.pipeline.progress import progress_broadcaster
+from backend.pipeline.stitcher import is_webtoon_layout, stitch_and_ocr
 from backend.pipeline.translator import TranslationEngine
 from backend.pipeline.typesetter import TypesettingEngine
 from backend.schemas.pipeline import (
@@ -96,7 +97,19 @@ class PipelineOrchestrator:
                 await self._broadcast(chapter_id, "ocr", 0.0, "Starting OCR...", total_pages=total_pages)
 
                 ocr_engine = OCREngine(source_language=source_lang)
-                ocr_pages = await self._run_ocr(ocr_engine, pages, chapter_id, total_pages)
+
+                # Detect webtoon layout and use stitching for better cross-strip text detection
+                page_paths = [(p.page_number, self._resolve(p.original_path)) for p in pages]
+                resolved_paths = [pp for _, pp in page_paths]
+
+                if is_webtoon_layout(resolved_paths):
+                    logger.info("Webtoon layout detected — using strip stitching for OCR")
+                    await self._broadcast(chapter_id, "ocr", 0.05, "Webtoon layout detected, stitching strips...")
+                    ocr_pages = await stitch_and_ocr(
+                        ocr_engine, page_paths, chapter_id, self._broadcast, total_pages
+                    )
+                else:
+                    ocr_pages = await self._run_ocr(ocr_engine, pages, chapter_id, total_pages)
 
                 # Save OCR results to DB
                 await self._save_ocr_results(session, pages, ocr_pages)

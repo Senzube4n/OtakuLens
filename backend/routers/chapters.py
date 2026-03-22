@@ -99,6 +99,15 @@ async def upload_chapter(
         content = await upload_file.read()
         file_path.write_bytes(content)
 
+        # Get image dimensions
+        width, height = 0, 0
+        try:
+            from PIL import Image as PILImage
+            img = PILImage.open(file_path)
+            width, height = img.size
+        except Exception:
+            pass
+
         # Resolve path relative to base_dir for storage
         relative_path = file_path.relative_to(settings.base_dir)
 
@@ -106,6 +115,8 @@ async def upload_chapter(
             chapter_id=chapter.id,
             page_number=idx,
             original_path=str(relative_path),
+            width=width,
+            height=height,
             status="pending",
         )
         db.add(page)
