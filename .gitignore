@@ -1,0 +1,71 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+.next/
+out/
+.turbo/
+
+# Tauri
+tauri/src-tauri/target/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Data & uploads
+backend/data/uploads/
+backend/data/output/
+backend/data/series/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite3
+
+# Models (large ML files)
+*.onnx
+*.pth
+*.pt
+*.bin
+models/
+
+# Redis dump
+dump.rdb
+
+# Coverage & testing
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Claude
+.claude/
