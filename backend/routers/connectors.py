@@ -43,6 +43,12 @@ _CONNECTORS: list[ConnectorInfo] = [
         description="Fetch manga page images from a direct URL or gallery page",
         enabled=True,
     ),
+    ConnectorInfo(
+        id="naver_webtoon",
+        name="Naver Webtoon",
+        description="Download chapters from comic.naver.com (Korean webtoons)",
+        enabled=True,
+    ),
 ]
 
 # Image extensions we accept
@@ -127,6 +133,101 @@ async def fetch_url(payload: FetchURLRequest):
         images_downloaded=downloaded,
         save_directory=str(relative_dir),
     )
+
+
+class NaverSearchRequest(BaseModel):
+    query: str
+
+
+class NaverDownloadRequest(BaseModel):
+    series_id: str
+    title_id: str
+    episode_no: int
+    chapter_number: float
+
+
+@router.post("/naver/search")
+async def naver_search(payload: NaverSearchRequest):
+    """Search Naver Webtoon for series."""
+    from backend.connectors.naver import NaverWebtoonConnector
+    connector = NaverWebtoonConnector()
+    results = await connector.search(payload.query)
+    return results
+
+
+@router.get("/naver/{title_id}/chapters")
+async def naver_chapters(title_id: str):
+    """List chapters for a Naver Webtoon series."""
+    from backend.connectors.naver import NaverWebtoonConnector
+    connector = NaverWebtoonConnector()
+    chapters = await connector.get_chapters(title_id)
+    return chapters
+
+
+@router.post("/naver/download")
+async def naver_download(payload: NaverDownloadRequest, db: AsyncSession = Depends(get_db)):
+    """Download a Naver Webtoon chapter and create DB records."""
+    import asyncio
+    from backend.connectors.naver import NaverWebtoonConnector
+    from backend.models import Chapter, Page, Series
+    from backend.database import async_session_factory
+
+    series = await db.get(Series, payload.series_id)
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+
+    connector = NaverWebtoonConnector()
+    chapter_url = f"https://comic.naver.com/webtoon/detail?titleId={payload.title_id}&no={payload.episode_no}"
+
+    # Create chapter record
+    chapter = Chapter(
+        series_id=payload.series_id,
+        chapter_number=payload.chapter_number,
+        title=f"Episode {payload.episode_no}",
+        status="pending",
+    )
+    db.add(chapter)
+    await db.flush()
+
+    # Download images
+    output_dir = settings.get_upload_dir() / payload.series_id / chapter.id
+    paths = await connector.download_chapter_to_disk(chapter_url, output_dir)
+
+    if not paths:
+        chapter.status = "failed"
+        chapter.error_message = "No images downloaded from Naver Webtoon"
+        await db.commit()
+        raise HTTPException(status_code=502, detail="Failed to download images from Naver")
+
+    # Create page records
+    for i, path in enumerate(paths, 1):
+        relative_path = str(path.relative_to(settings.base_dir))
+        page = Page(
+            chapter_id=chapter.id,
+            page_number=i,
+            original_path=relative_path,
+            status="pending",
+        )
+        db.add(page)
+
+    chapter.page_count = len(paths)
+
+    # Set cover if needed
+    if not series.cover_image_path and paths:
+        series.cover_image_path = str(paths[0].relative_to(settings.base_dir))
+
+    await db.flush()
+    await db.refresh(chapter)
+
+    # Kick off pipeline
+    from backend.routers.chapters import _run_pipeline
+    asyncio.create_task(_run_pipeline(chapter.id, payload.series_id))
+
+    return {
+        "chapter_id": chapter.id,
+        "pages_downloaded": len(paths),
+        "status": "pending",
+    }
 
 
 def _is_image_url(url: str) -> bool:

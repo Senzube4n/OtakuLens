@@ -7,48 +7,54 @@ chrome.storage.local.get(["apiUrl", "sourceLang", "targetLang"], (data) => {
 
 // Save settings on change
 ["apiUrl", "sourceLang", "targetLang"].forEach((id) => {
-  document.getElementById(id).addEventListener("change", () => {
-    chrome.storage.local.set({
-      apiUrl: document.getElementById("apiUrl").value,
-      sourceLang: document.getElementById("sourceLang").value,
-      targetLang: document.getElementById("targetLang").value,
-    });
-  });
+  document.getElementById(id).addEventListener("change", saveSettings);
 });
 
-// Translate button
-document.getElementById("translateBtn").addEventListener("click", async () => {
-  const btn = document.getElementById("translateBtn");
-  const status = document.getElementById("status");
+function saveSettings() {
+  chrome.storage.local.set({
+    apiUrl: document.getElementById("apiUrl").value,
+    sourceLang: document.getElementById("sourceLang").value,
+    targetLang: document.getElementById("targetLang").value,
+  });
+}
 
-  btn.disabled = true;
-  status.textContent = "Scanning page for comic images...";
-  status.className = "status";
+function getSettings() {
+  return {
+    apiUrl: document.getElementById("apiUrl").value,
+    sourceLang: document.getElementById("sourceLang").value,
+    targetLang: document.getElementById("targetLang").value,
+  };
+}
+
+async function sendToContentScript(action) {
+  const status = document.getElementById("status");
+  const { apiUrl, sourceLang, targetLang } = getSettings();
 
   try {
-    const apiUrl = document.getElementById("apiUrl").value;
-    const sourceLang = document.getElementById("sourceLang").value;
-    const targetLang = document.getElementById("targetLang").value;
-
     // Check backend connection
     const healthRes = await fetch(`${apiUrl}/api/health`);
     if (!healthRes.ok) throw new Error("Cannot connect to MangaLens backend");
 
-    // Send message to content script to find and translate images
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    chrome.tabs.sendMessage(tab.id, {
-      action: "translate",
-      apiUrl,
-      sourceLang,
-      targetLang,
-    });
+    chrome.tabs.sendMessage(tab.id, { action, apiUrl, sourceLang, targetLang });
 
-    status.textContent = "Translation started! Check the page.";
+    status.textContent = action === "translate" ? "Translating... check the page" : "Click an image on the page";
     status.className = "status connected";
   } catch (err) {
     status.textContent = `Error: ${err.message}`;
     status.className = "status error";
-  } finally {
-    btn.disabled = false;
   }
+}
+
+// Translate all images
+document.getElementById("translateBtn").addEventListener("click", () => {
+  saveSettings();
+  sendToContentScript("translate");
+});
+
+// Click-to-translate mode
+document.getElementById("selectBtn").addEventListener("click", () => {
+  saveSettings();
+  sendToContentScript("translate_selected");
+  window.close(); // Close popup so user can click on images
 });
