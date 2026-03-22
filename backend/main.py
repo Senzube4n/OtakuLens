@@ -19,7 +19,16 @@ async def lifespan(app: FastAPI):
     settings.get_upload_dir()
     settings.get_output_dir()
     settings.get_font_dir()
+
+    # Start auto-download scheduler
+    from backend.connectors.registry import connector_registry
+    connector_registry.register_defaults()
+    connector_registry.start_scheduler()
+
     yield
+
+    # Cleanup
+    connector_registry.stop_scheduler()
 
 
 app = FastAPI(title="MangaLens", version="0.1.0", lifespan=lifespan)

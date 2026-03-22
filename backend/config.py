@@ -3,7 +3,12 @@
 from pathlib import Path
 from typing import Literal
 
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Pre-load .env since pydantic-settings may not find it
+_PROJECT_ROOT_EARLY = Path(__file__).resolve().parent.parent
+load_dotenv(_PROJECT_ROOT_EARLY / ".env", override=True)
 
 
 # Language code -> display name + OCR engine preference
@@ -31,9 +36,11 @@ SUPPORTED_LANGUAGES = {
 }
 
 
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_PROJECT_ROOT / ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )

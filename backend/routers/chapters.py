@@ -36,9 +36,8 @@ async def _run_pipeline(chapter_id: str, series_id: str) -> None:
     try:
         from backend.pipeline.orchestrator import PipelineOrchestrator
 
-        async with async_session_factory() as db:
-            orchestrator = PipelineOrchestrator(db)
-            await orchestrator.process_chapter(chapter_id)
+        orchestrator = PipelineOrchestrator(async_session_factory, settings)
+        await orchestrator.process_chapter(chapter_id)
     except ImportError:
         logger.warning(
             "PipelineOrchestrator not available; chapter %s will stay pending",

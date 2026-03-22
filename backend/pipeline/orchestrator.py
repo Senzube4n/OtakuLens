@@ -40,6 +40,17 @@ class PipelineOrchestrator:
         self.session_factory = session_factory
         self.settings = settings
 
+    def _resolve(self, relative_path: str) -> Path:
+        """Resolve a DB-stored relative path to an absolute path."""
+        return self.settings.base_dir / relative_path
+
+    def _relative(self, absolute_path: Path) -> str:
+        """Convert an absolute path back to a relative path for DB storage."""
+        try:
+            return str(absolute_path.relative_to(self.settings.base_dir))
+        except ValueError:
+            return str(absolute_path)
+
     # ------------------------------------------------------------------
     # Main entry point
     # ------------------------------------------------------------------
@@ -183,7 +194,7 @@ class PipelineOrchestrator:
         """Run OCR on all pages in parallel."""
 
         async def ocr_one(page: Page) -> OCRPageResult:
-            regions = await engine.detect_text(Path(page.original_path))
+            regions = await engine.detect_text(self._resolve(page.original_path))
             await self._broadcast(
                 chapter_id, "ocr",
                 (page.page_number) / total_pages,
@@ -211,10 +222,10 @@ class PipelineOrchestrator:
 
         async def inpaint_one(page: Page) -> None:
             regions = ocr_map.get(page.page_number, [])
-            original = Path(page.original_path)
+            original = self._resolve(page.original_path)
             cleaned = original.parent / f"{original.stem}_cleaned{original.suffix}"
             await engine.remove_text(original, regions, cleaned)
-            page.cleaned_path = str(cleaned)
+            page.cleaned_path = self._relative(cleaned)
             page.status = "cleaned"
             await self._broadcast(
                 chapter_id, "inpainting",
@@ -254,12 +265,12 @@ class PipelineOrchestrator:
                 page.status = "typeset"
                 return
 
-            cleaned = Path(page.cleaned_path) if page.cleaned_path else Path(page.original_path)
-            original = Path(page.original_path)
+            cleaned = self._resolve(page.cleaned_path) if page.cleaned_path else self._resolve(page.original_path)
+            original = self._resolve(page.original_path)
             output = original.parent / f"{original.stem}_translated{original.suffix}"
 
             await engine.typeset(cleaned, page_regions, page_ocr, output)
-            page.translated_path = str(output)
+            page.translated_path = self._relative(output)
             page.status = "typeset"
             await self._broadcast(
                 chapter_id, "typesetting",
