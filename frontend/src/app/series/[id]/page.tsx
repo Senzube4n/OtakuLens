@@ -9,7 +9,7 @@ import type { Series, Chapter, TermDecision, Character } from "@/lib/types";
 import { STAGE_LABELS, STAGE_ORDER, formatDate } from "@/lib/utils";
 import {
   Upload, BookOpen, RefreshCw, Loader2, ArrowLeft, ImagePlus, Eye, X, Globe,
-  ChevronRight, Sparkles, User, Book, CheckCircle2, AlertCircle, Settings2, Zap,
+  ChevronRight, Sparkles, User, Book, CheckCircle2, AlertCircle, Settings2, Zap, Network,
 } from "lucide-react";
 
 function StatusBadge({ status }: { status: string }) {
@@ -161,10 +161,16 @@ export default function SeriesDetail() {
               )}
             </div>
           </div>
-          <button onClick={() => { setShowUpload(true); setChapterNum(chapters.length > 0 ? Math.max(...chapters.map(c => c.chapter_number)) + 1 : 1); }}
-            className="btn-playful flex items-center gap-2 flex-shrink-0 whitespace-nowrap">
-            <Upload size={15} /> Upload Chapter
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Link href={`/series/${id}/wiki`}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-cyan-600/20 to-purple-600/20 hover:from-cyan-600/30 hover:to-purple-600/30 border border-cyan-500/20 text-cyan-300 text-sm font-semibold transition-all hover:scale-105 whitespace-nowrap">
+              <Network size={15} /> View Wiki
+            </Link>
+            <button onClick={() => { setShowUpload(true); setChapterNum(chapters.length > 0 ? Math.max(...chapters.map(c => c.chapter_number)) + 1 : 1); }}
+              className="btn-playful flex items-center gap-2 whitespace-nowrap">
+              <Upload size={15} /> Upload Chapter
+            </button>
+          </div>
         </div>
       </div>
 
