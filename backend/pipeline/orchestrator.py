@@ -379,9 +379,14 @@ class PipelineOrchestrator:
         self, session: AsyncSession, pages: list[Page], translated_regions: list[TranslatedRegion]
     ) -> None:
         """Update TextRegion rows with translation data."""
+        # Refresh pages to get the text_regions created during OCR save
+        for page in pages:
+            await session.refresh(page, ["text_regions"])
+
         # Build lookup: page_number -> page
         page_map = {p.page_number: p for p in pages}
 
+        saved_count = 0
         for tr in translated_regions:
             page = page_map.get(tr.page_number)
             if page is None:
@@ -396,8 +401,11 @@ class PipelineOrchestrator:
                 db_region.speaker = tr.speaker
                 db_region.translation_note = tr.note
                 db_region.font_style = tr.font_style
+                if tr.translated_text:
+                    saved_count += 1
 
         await session.commit()
+        logger.info("Saved %d translations to DB", saved_count)
 
     async def _load_glossary(self, session: AsyncSession, series_id: str) -> list[dict]:
         """Load existing term decisions for the series."""
