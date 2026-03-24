@@ -142,3 +142,68 @@ export interface ReadingProgress {
   last_chapter_number: number;
   last_page_number: number;
 }
+
+// Comments
+export interface Comment {
+  id: string;
+  series_id: string;
+  chapter_id: string;
+  page_number: number;
+  y_offset: number;
+  user_name: string;
+  text: string;
+  reactions: Record<string, number>;
+  created_at: string;
+}
+
+// Ratings
+export interface RatingResponse {
+  average: number;
+  count: number;
+}
+
+// World entities
+export interface WorldEntity {
+  id: string;
+  series_id: string;
+  entity_type: string;
+  name: string;
+  name_original: string | null;
+  aliases: string | null;
+  description: string | null;
+  properties: string | null;
+  first_appearance_chapter: number | null;
+  hierarchy_parent_id: string | null;
+  auto_generated: boolean;
+  created_at: string;
+}
+
+// Relationship map graph types
+export interface RelationshipMapNode {
+  id: string;
+  name: string;
+  name_original: string | null;
+  entity_type: string;
+  description: string | null;
+  aliases: string | null;
+  personality_traits: string | null;
+  voice_profile: string | null;
+  properties: string | null;
+  first_appearance_chapter: number | null;
+  status: string | null;
+}
+
+export interface RelationshipMapEdge {
+  id: string;
+  source: string;
+  target: string;
+  relationship_type: string;
+  description: string | null;
+  started_chapter: number | null;
+  ended_chapter: number | null;
+}
+
+export interface RelationshipMapData {
+  nodes: RelationshipMapNode[];
+  edges: RelationshipMapEdge[];
+}

@@ -45,12 +45,14 @@ app.add_middleware(
 from backend.routers import (  # noqa: E402
     chapters,
     characters,
+    comments,
     connectors,
     glossary,
     pages,
     reading,
     series,
     settings as settings_router,
+    world,
 )
 
 app.include_router(series.router, prefix="/api/series", tags=["series"])
@@ -60,7 +62,9 @@ app.include_router(glossary.router, prefix="/api", tags=["glossary"])
 app.include_router(characters.router, prefix="/api", tags=["characters"])
 app.include_router(reading.router, prefix="/api/reading", tags=["reading"])
 app.include_router(settings_router.router, prefix="/api/settings", tags=["settings"])
+app.include_router(comments.router, prefix="/api", tags=["comments"])
 app.include_router(connectors.router, prefix="/api/connectors", tags=["connectors"])
+app.include_router(world.router, prefix="/api", tags=["world"])
 
 # Serve uploaded and processed images
 app.mount("/data", StaticFiles(directory=str(settings.base_dir / "data")), name="data")

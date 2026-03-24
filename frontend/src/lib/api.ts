@@ -147,5 +147,49 @@ export const updateSettings = (data: { anthropic_api_key?: string; default_sourc
 export const getLanguages = () =>
   fetchAPI<Record<string, import("./types").Language>>("/languages");
 
+// Comments
+export const listComments = (chapterId: string) =>
+  fetchAPI<import("./types").Comment[]>(`/chapters/${chapterId}/comments`);
+
+export const createComment = (chapterId: string, data: {
+  page_number: number;
+  y_offset: number;
+  text: string;
+  user_name?: string;
+}) => fetchAPI<import("./types").Comment>(`/chapters/${chapterId}/comments`, {
+  method: "POST",
+  body: JSON.stringify(data),
+});
+
+export const reactToComment = (commentId: string, emoji: string) =>
+  fetchAPI<import("./types").Comment>(`/comments/${commentId}/react`, {
+    method: "POST",
+    body: JSON.stringify({ emoji }),
+  });
+
+export const deleteComment = (commentId: string) =>
+  fetchAPI<void>(`/comments/${commentId}`, { method: "DELETE" });
+
+// Ratings
+export const rateChapter = (chapterId: string, data: { score: number; user_name?: string }) =>
+  fetchAPI<import("./types").RatingResponse>(`/chapters/${chapterId}/rate`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const getSeriesRatings = (seriesId: string) =>
+  fetchAPI<import("./types").RatingResponse>(`/series/${seriesId}/ratings`);
+
+// World entities & relationship map
+export const getWorldEntities = (seriesId: string, maxChapter?: number) => {
+  const params = maxChapter ? `?max_chapter=${maxChapter}` : "";
+  return fetchAPI<import("./types").WorldEntity[]>(`/series/${seriesId}/world-entities${params}`);
+};
+
+export const getRelationshipMap = (seriesId: string, maxChapter?: number) => {
+  const params = maxChapter ? `?max_chapter=${maxChapter}` : "";
+  return fetchAPI<import("./types").RelationshipMapData>(`/series/${seriesId}/relationship-map${params}`);
+};
+
 // Image URL helper
 export const imageUrl = (path: string) => `${DATA_BASE}/${path}`;
