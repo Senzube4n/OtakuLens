@@ -75,15 +75,56 @@ class TranslationEngine:
             target_name,
         )
 
-        response = await self.client.messages.create(
-            model=self.model,
-            max_tokens=8192,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_message}],
-        )
+        # Batch if too many regions — each region needs ~80 tokens of JSON output
+        # Claude max output is ~8K tokens, so batch at ~80 regions
+        BATCH_SIZE = 60
+        total_regions = sum(len(p.regions) for p in ocr_pages)
 
-        raw_text = response.content[0].text
-        result = self._parse_response(raw_text, ocr_pages)
+        if total_regions <= BATCH_SIZE:
+            response = await self.client.messages.create(
+                model=self.model,
+                max_tokens=16384,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_message}],
+            )
+            raw_text = response.content[0].text
+            result = self._parse_response(raw_text, ocr_pages)
+        else:
+            # Split pages into batches
+            all_translated = []
+            batches = []
+            current_batch = []
+            current_count = 0
+
+            for page in ocr_pages:
+                current_batch.append(page)
+                current_count += len(page.regions)
+                if current_count >= BATCH_SIZE:
+                    batches.append(current_batch)
+                    current_batch = []
+                    current_count = 0
+            if current_batch:
+                batches.append(current_batch)
+
+            logger.info("Splitting %d regions into %d batches", total_regions, len(batches))
+
+            for batch_idx, batch in enumerate(batches):
+                batch_msg = self._build_user_message(batch, source_name, target_name)
+                batch_regions = sum(len(p.regions) for p in batch)
+
+                logger.info("Translating batch %d/%d: %d regions", batch_idx + 1, len(batches), batch_regions)
+                response = await self.client.messages.create(
+                    model=self.model,
+                    max_tokens=16384,
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": batch_msg}],
+                )
+                raw_text = response.content[0].text
+                batch_result = self._parse_response(raw_text, batch)
+                all_translated.extend(batch_result.regions)
+
+            from backend.schemas.pipeline import TranslationResult
+            result = TranslationResult(regions=all_translated)
 
         logger.info("Translation complete: %d translated regions", len(result.regions))
         return result

@@ -30,6 +30,7 @@ from backend.schemas.pipeline import (
     PipelineProgress,
     TranslatedRegion,
     TranslationGuide,
+    TranslationResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -197,13 +198,19 @@ class PipelineOrchestrator:
                     model=self.settings.claude_model,
                 )
 
-                translation_result = await translator.translate(
-                    ocr_pages=ocr_pages,
-                    guide=guide,
-                    source_lang=source_lang,
-                    target_lang=target_lang,
-                    glossary=existing_glossary,
-                )
+                # Filter to only pages with meaningful text (skip empty pages)
+                translatable_pages = [p for p in ocr_pages if p.regions]
+                if not translatable_pages:
+                    logger.warning("No text regions to translate for chapter %s", chapter_id)
+                    translation_result = TranslationResult(regions=[])
+                else:
+                    translation_result = await translator.translate(
+                        ocr_pages=translatable_pages,
+                        guide=guide,
+                        source_lang=source_lang,
+                        target_lang=target_lang,
+                        glossary=existing_glossary,
+                    )
 
                 # Save translations to DB
                 await self._save_translations(session, pages, translation_result.regions)
