@@ -59,6 +59,12 @@ class OCREngine:
                 continue
             if not text or not text.strip():
                 continue
+            # Filter OCR garbage — single punctuation/symbol characters
+            cleaned = text.strip()
+            if len(cleaned) <= 2 and all(
+                c in "!@#$%^&*()_+-=[]{}|;:',.<>?/~`0123456789 " for c in cleaned
+            ):
+                continue
 
             bbox = self._polygon_to_bbox(polygon)
             # Skip degenerate bboxes

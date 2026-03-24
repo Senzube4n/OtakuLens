@@ -17,6 +17,7 @@ from backend.models.glossary import TermDecision
 from backend.models.page import Page
 from backend.models.text_region import TextRegion
 from backend.pipeline.analyzer import PreTranslationAnalyzer
+from backend.pipeline.comic_text_detect import ComicTextDetector, VisionOCR, find_unread_regions
 from backend.pipeline.inpainter import InpaintingEngine
 from backend.pipeline.ocr_engine import OCREngine
 from backend.pipeline.progress import progress_broadcaster
@@ -110,6 +111,51 @@ class PipelineOrchestrator:
                     )
                 else:
                     ocr_pages = await self._run_ocr(ocr_engine, pages, chapter_id, total_pages)
+
+                # ===== STEP 1b: COMIC TEXT DETECTION + VISION FALLBACK =====
+                # Use comic-text-detector to find artistic/stylized text that OCR missed
+                # Then use Claude vision ONLY on those unread cropped regions
+                await self._broadcast(chapter_id, "ocr", 0.85, "Detecting artistic text regions...")
+
+                ctd = ComicTextDetector()
+                vision_ocr = VisionOCR(
+                    api_key=self.settings.anthropic_api_key,
+                    model=self.settings.claude_model,
+                )
+
+                for ocr_page in ocr_pages:
+                    page = next((p for p in pages if p.page_number == ocr_page.page_number), None)
+                    if page is None:
+                        continue
+
+                    img_path = self._resolve(page.original_path)
+                    ctd_regions = await ctd.detect_regions(img_path)
+                    if not ctd_regions:
+                        continue
+
+                    # Find regions CTD detected but OCR couldn't read
+                    unread = find_unread_regions(ctd_regions, ocr_page.regions)
+                    if not unread:
+                        continue
+
+                    logger.info(
+                        "Page %d: %d unread regions found by CTD, sending to Claude vision",
+                        ocr_page.page_number, len(unread),
+                    )
+                    await self._broadcast(
+                        chapter_id, "ocr", 0.9,
+                        f"Reading artistic text on page {ocr_page.page_number} with vision...",
+                    )
+
+                    vision_results = await vision_ocr.read_text_regions(
+                        img_path, unread, source_lang,
+                    )
+                    if vision_results:
+                        ocr_page.regions.extend(vision_results)
+                        logger.info(
+                            "Page %d: Claude vision added %d text regions",
+                            ocr_page.page_number, len(vision_results),
+                        )
 
                 # Save OCR results to DB
                 await self._save_ocr_results(session, pages, ocr_pages)
