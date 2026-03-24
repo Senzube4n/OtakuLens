@@ -121,9 +121,24 @@ export interface AppSettings {
   default_source_lang: string;
   default_target_lang: string;
   claude_model: string;
+  compute_mode: "auto" | "cpu" | "gpu";
+  gpu_available: boolean;
+  using_gpu: boolean;
 }
 
 export interface Language {
   code: string;
   name: string;
+}
+
+// Composite type for infinite scroll reader
+export interface ChapterWithPages {
+  chapter: Chapter;
+  pages: Page[];
+}
+
+// Reading progress tracking
+export interface ReadingProgress {
+  last_chapter_number: number;
+  last_page_number: number;
 }

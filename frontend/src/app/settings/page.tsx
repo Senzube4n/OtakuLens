@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { getSettings, updateSettings, getLanguages } from "@/lib/api";
 import type { AppSettings, Language } from "@/lib/types";
-import { Save, Key, Check, ExternalLink } from "lucide-react";
+import { Save, Key, Check, ExternalLink, Cpu, Zap } from "lucide-react";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -11,6 +11,7 @@ export default function SettingsPage() {
   const [apiKey, setApiKey] = useState("");
   const [defaultSource, setDefaultSource] = useState("ko");
   const [defaultTarget, setDefaultTarget] = useState("en");
+  const [computeMode, setComputeMode] = useState<"auto" | "cpu" | "gpu">("auto");
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
@@ -20,6 +21,7 @@ export default function SettingsPage() {
       setLanguages(l);
       setDefaultSource(s.default_source_lang);
       setDefaultTarget(s.default_target_lang);
+      setComputeMode(s.compute_mode);
     }).catch((e) => setError("Failed to load settings. Is the backend running?"));
   }, []);
 
@@ -29,6 +31,7 @@ export default function SettingsPage() {
       if (apiKey) data.anthropic_api_key = apiKey;
       data.default_source_lang = defaultSource;
       data.default_target_lang = defaultTarget;
+      data.compute_mode = computeMode;
       const updated = await updateSettings(data);
       setSettings(updated);
       setApiKey("");
@@ -81,6 +84,31 @@ export default function SettingsPage() {
               </select>
             </div>
           </div>
+        </div>
+
+        {/* Compute Mode */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <h2 className="text-sm font-medium flex items-center gap-2 mb-3"><Cpu size={16} /> Compute Mode</h2>
+          <div className="flex items-center gap-2 mb-3">
+            <div className={`w-2 h-2 rounded-full ${settings.using_gpu ? "bg-green-500" : "bg-yellow-500"}`} />
+            <span className="text-xs text-gray-400">
+              {settings.gpu_available
+                ? `GPU available${settings.using_gpu ? " (active)" : " (not used)"}`
+                : "No GPU detected (using CPU)"}
+            </span>
+          </div>
+          <select
+            value={computeMode}
+            onChange={(e) => setComputeMode(e.target.value as "auto" | "cpu" | "gpu")}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500"
+          >
+            <option value="auto">Auto (use GPU if available)</option>
+            <option value="cpu">CPU only</option>
+            <option value="gpu">Force GPU</option>
+          </select>
+          <p className="text-xs text-gray-600 mt-1">
+            CPU mode is slower but works without a CUDA-capable GPU. Restart may be needed for OCR engine changes to take effect.
+          </p>
         </div>
 
         {/* Save */}

@@ -3,79 +3,390 @@
 <head>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { width: 340px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0b0f; color: #e5e7eb; padding: 20px; }
-    .header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-    .logo { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #7c3aed, #db2777); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; }
-    .title { font-size: 18px; font-weight: 700; background: linear-gradient(to right, #a78bfa, #f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .field { margin-bottom: 12px; }
-    label { display: block; font-size: 10px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-    input, select { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 9px 14px; color: #e5e7eb; font-size: 13px; outline: none; transition: border-color 0.2s; }
-    input:focus, select:focus { border-color: rgba(124, 58, 237, 0.5); }
+    body {
+      width: 360px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0b0f;
+      color: #e5e7eb;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ─────────────────────────────────── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(219,39,119,0.1));
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .logo {
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 800; font-size: 15px;
+      box-shadow: 0 2px 12px rgba(124,58,237,0.3);
+    }
+    .header-text { flex: 1; }
+    .title {
+      font-size: 17px; font-weight: 700;
+      background: linear-gradient(to right, #a78bfa, #f472b6);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .version { font-size: 10px; color: #6b7280; margin-top: 1px; }
+
+    /* ── Site Status Badge ───────────────────────── */
+    .site-status {
+      margin: 12px 20px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .site-status .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .site-status.supported {
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.2);
+      color: #4ade80;
+    }
+    .site-status.supported .dot { background: #4ade80; }
+    .site-status.unsupported {
+      background: rgba(234,179,8,0.1);
+      border: 1px solid rgba(234,179,8,0.2);
+      color: #fbbf24;
+    }
+    .site-status.unsupported .dot { background: #fbbf24; }
+    .site-status.unknown {
+      background: rgba(107,114,128,0.1);
+      border: 1px solid rgba(107,114,128,0.2);
+      color: #9ca3af;
+    }
+    .site-status.unknown .dot { background: #9ca3af; }
+    .site-status .label { font-weight: 600; }
+    .site-status .detail { font-weight: 400; color: #9ca3af; font-size: 11px; }
+    .site-status .method-badge {
+      margin-left: auto;
+      font-size: 9px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .site-status.supported .method-badge {
+      background: rgba(34,197,94,0.15);
+      color: #4ade80;
+    }
+
+    /* ── Content Section ─────────────────────────── */
+    .section {
+      padding: 0 20px;
+      margin-bottom: 12px;
+    }
+    .section-label {
+      font-size: 9px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    /* ── Form Fields ──────────────────────────────── */
+    .field { margin-bottom: 10px; }
+    label {
+      display: block;
+      font-size: 10px;
+      color: #6b7280;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+    input, select {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 9px 14px;
+      color: #e5e7eb;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus {
+      border-color: rgba(124, 58, 237, 0.5);
+      background: rgba(255,255,255,0.06);
+    }
+    select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b7280'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .btn-primary { width: 100%; padding: 11px; background: linear-gradient(135deg, #7c3aed, #db2777); color: white; border: none; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; margin-bottom: 8px; }
-    .btn-primary:hover { opacity: 0.9; }
-    .btn-secondary { width: 100%; padding: 10px; background: rgba(255,255,255,0.05); color: #a78bfa; border: 1px solid rgba(124, 58, 237, 0.3); border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-    .btn-secondary:hover { background: rgba(124, 58, 237, 0.1); border-color: rgba(124, 58, 237, 0.5); }
-    button:disabled { opacity: 0.4; cursor: not-allowed; }
-    .status { font-size: 11px; color: #6b7280; margin-top: 10px; text-align: center; padding: 6px; border-radius: 8px; }
-    .status.connected { color: #34d399; background: rgba(52,211,153,0.1); }
-    .status.error { color: #f87171; background: rgba(248,113,113,0.1); }
-    .divider { height: 1px; background: rgba(255,255,255,0.05); margin: 12px 0; }
+
+    /* ── Image count ──────────────────────────────── */
+    .image-count {
+      text-align: center;
+      font-size: 11px;
+      color: #9ca3af;
+      padding: 6px 0;
+      margin: 0 20px 8px;
+    }
+    .image-count strong {
+      color: #a78bfa;
+      font-weight: 700;
+    }
+
+    /* ── Buttons ───────────────────────────────────── */
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(124,58,237,0.3); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .btn-secondary {
+      width: 100%;
+      padding: 10px;
+      background: rgba(255,255,255,0.04);
+      color: #a78bfa;
+      border: 1px solid rgba(124, 58, 237, 0.25);
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover { background: rgba(124, 58, 237, 0.1); border-color: rgba(124, 58, 237, 0.4); }
+    .btn-secondary:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    /* ── Divider ───────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: rgba(255,255,255,0.04);
+      margin: 12px 20px;
+    }
+
+    /* ── Backend Status ─────────────────────────────── */
+    .backend-status {
+      margin: 0 20px 12px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .backend-status .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .backend-status.connected {
+      background: rgba(34,197,94,0.08);
+      color: #4ade80;
+    }
+    .backend-status.connected .dot { background: #4ade80; }
+    .backend-status.disconnected {
+      background: rgba(239,68,68,0.08);
+      color: #f87171;
+    }
+    .backend-status.disconnected .dot { background: #f87171; }
+    .backend-status.checking {
+      background: rgba(107,114,128,0.08);
+      color: #9ca3af;
+    }
+    .backend-status.checking .dot { background: #9ca3af; }
+
+    /* ── Settings Toggle ────────────────────────────── */
+    .settings-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 20px;
+      font-size: 11px;
+      color: #6b7280;
+      cursor: pointer;
+      transition: color 0.2s;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+    .settings-toggle:hover { color: #a78bfa; }
+    .settings-toggle .arrow {
+      font-size: 8px;
+      transition: transform 0.2s;
+    }
+    .settings-toggle.open .arrow { transform: rotate(90deg); }
+
+    .settings-content {
+      display: none;
+      padding: 0 20px 12px;
+    }
+    .settings-content.show { display: block; }
+
+    /* ── Footer ──────────────────────────────────── */
+    .footer {
+      padding: 10px 20px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer a {
+      font-size: 10px;
+      color: #6b7280;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer a:hover { color: #a78bfa; }
+    .kofi-link {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      color: #6b7280 !important;
+    }
+    .kofi-link:hover { color: #f472b6 !important; }
   </style>
 </head>
 <body>
+  <!-- Header -->
   <div class="header">
     <div class="logo">M</div>
-    <span class="title">MangaLens</span>
-  </div>
-
-  <div class="field">
-    <label>Backend URL</label>
-    <input type="text" id="apiUrl" value="http://localhost:8000" />
-  </div>
-
-  <div class="row">
-    <div class="field">
-      <label>From</label>
-      <select id="sourceLang">
-        <option value="ko">Korean</option>
-        <option value="zh">Chinese</option>
-        <option value="ja">Japanese</option>
-        <option value="en">English</option>
-        <option value="es">Spanish</option>
-        <option value="fr">French</option>
-        <option value="de">German</option>
-        <option value="pt">Portuguese</option>
-        <option value="ru">Russian</option>
-        <option value="ar">Arabic</option>
-        <option value="th">Thai</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>To</label>
-      <select id="targetLang">
-        <option value="en">English</option>
-        <option value="es">Spanish</option>
-        <option value="fr">French</option>
-        <option value="de">German</option>
-        <option value="pt">Portuguese</option>
-        <option value="ko">Korean</option>
-        <option value="zh">Chinese</option>
-        <option value="ja">Japanese</option>
-        <option value="ru">Russian</option>
-        <option value="ar">Arabic</option>
-        <option value="hi">Hindi</option>
-        <option value="id">Indonesian</option>
-        <option value="tl">Tagalog</option>
-      </select>
+    <div class="header-text">
+      <div class="title">MangaLens</div>
+      <div class="version">v0.2.0 &mdash; In-page translator</div>
     </div>
   </div>
 
-  <button class="btn-primary" id="translateBtn">Translate All Images</button>
-  <button class="btn-secondary" id="selectBtn">Click to Translate</button>
+  <!-- Site Status -->
+  <div class="site-status unknown" id="siteStatus">
+    <div class="dot"></div>
+    <span class="label" id="siteName">Checking site...</span>
+    <span class="method-badge" id="siteMethod"></span>
+  </div>
+
+  <!-- Backend Status -->
+  <div class="backend-status checking" id="backendStatus">
+    <div class="dot"></div>
+    <span id="backendText">Checking backend...</span>
+  </div>
+
+  <!-- Image Count -->
+  <div class="image-count" id="imageCount" style="display:none"></div>
+
+  <!-- Language Selection -->
+  <div class="section">
+    <div class="section-label">Translation</div>
+    <div class="row">
+      <div class="field">
+        <label>From</label>
+        <select id="sourceLang">
+          <option value="ko">Korean</option>
+          <option value="ja">Japanese</option>
+          <option value="zh">Chinese</option>
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="pt">Portuguese</option>
+          <option value="ru">Russian</option>
+          <option value="ar">Arabic</option>
+          <option value="th">Thai</option>
+          <option value="vi">Vietnamese</option>
+          <option value="id">Indonesian</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>To</label>
+        <select id="targetLang">
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="pt">Portuguese</option>
+          <option value="ko">Korean</option>
+          <option value="ja">Japanese</option>
+          <option value="zh">Chinese</option>
+          <option value="ru">Russian</option>
+          <option value="ar">Arabic</option>
+          <option value="hi">Hindi</option>
+          <option value="id">Indonesian</option>
+          <option value="tl">Tagalog</option>
+          <option value="vi">Vietnamese</option>
+          <option value="th">Thai</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="section">
+    <button class="btn-primary" id="translateBtn" disabled>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg>
+      Translate This Page
+    </button>
+    <div class="btn-row">
+      <button class="btn-secondary" id="selectBtn" disabled>Click to Translate</button>
+      <button class="btn-secondary" id="toggleBtn" disabled>Toggle Original</button>
+    </div>
+  </div>
 
   <div class="divider"></div>
-  <div class="status" id="status">Ready</div>
+
+  <!-- Settings (collapsible) -->
+  <button class="settings-toggle" id="settingsToggle">
+    <span class="arrow">&#9654;</span>
+    Settings
+  </button>
+  <div class="settings-content" id="settingsContent">
+    <div class="field">
+      <label>Backend URL</label>
+      <input type="text" id="apiUrl" value="http://localhost:8000" />
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <a href="http://localhost:3000" target="_blank" id="webAppLink">Open MangaLens Web App</a>
+    <a href="https://ko-fi.com/therealsenzu" target="_blank" class="kofi-link">
+      &#9829; Support
+    </a>
+  </div>
 
   <script src="popup.js"></script>
 </body>

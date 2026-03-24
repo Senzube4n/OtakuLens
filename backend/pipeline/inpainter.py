@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
+from backend.config import should_use_gpu
 from backend.schemas.pipeline import OCRRegionResult
 
 logger = logging.getLogger(__name__)
@@ -111,8 +112,20 @@ class InpaintingEngine:
             from simple_lama_inpainting import SimpleLama
 
             if self._lama_model is None:
-                logger.info("Loading LaMa inpainting model (first use)...")
+                use_gpu = should_use_gpu()
+                if not use_gpu:
+                    import torch
+                    # Force CPU for LaMa when GPU is disabled
+                    torch.set_default_device("cpu")
+                    import os
+                    os.environ["CUDA_VISIBLE_DEVICES"] = ""
+                logger.info("Loading LaMa inpainting model (first use, gpu=%s)...", use_gpu)
                 self._lama_model = SimpleLama()
+                if not use_gpu:
+                    # Ensure model is on CPU
+                    self._lama_model.device = "cpu"
+                    if hasattr(self._lama_model, "model"):
+                        self._lama_model.model = self._lama_model.model.cpu()
                 self._lama_available = True
 
             result = self._lama_model(image, mask)

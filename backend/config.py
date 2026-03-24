@@ -1,10 +1,13 @@
 """Application configuration loaded from environment variables."""
 
+import logging
 from pathlib import Path
 from typing import Literal
 
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+logger = logging.getLogger(__name__)
 
 # Pre-load .env since pydantic-settings may not find it
 _PROJECT_ROOT_EARLY = Path(__file__).resolve().parent.parent
@@ -75,6 +78,9 @@ class Settings(BaseSettings):
     port: int = 8000
     cors_origins: list[str] = ["http://localhost:3000"]
 
+    # Compute mode: "auto" (detect GPU), "cpu" (force CPU), "gpu" (force GPU)
+    compute_mode: Literal["auto", "cpu", "gpu"] = "auto"
+
     # Auto-download
     auto_download_interval_minutes: int = 30
 
@@ -98,3 +104,47 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def detect_gpu_available() -> bool:
+    """Check if CUDA GPU is available via PyTorch."""
+    try:
+        import torch
+        available = torch.cuda.is_available()
+        if available:
+            logger.info("GPU detected: %s", torch.cuda.get_device_name(0))
+        else:
+            logger.info("No CUDA GPU detected, using CPU")
+        return available
+    except ImportError:
+        logger.info("PyTorch not installed, GPU detection unavailable")
+        return False
+
+
+def should_use_gpu() -> bool:
+    """Resolve compute_mode setting to a boolean for GPU usage."""
+    mode = settings.compute_mode
+    if mode == "cpu":
+        return False
+    if mode == "gpu":
+        return True
+    # mode == "auto"
+    return detect_gpu_available()
+
+
+def get_gpu_info() -> dict:
+    """Return GPU information for the health endpoint."""
+    info: dict = {
+        "compute_mode": settings.compute_mode,
+        "cuda_available": False,
+        "gpu_name": None,
+        "using_gpu": should_use_gpu(),
+    }
+    try:
+        import torch
+        info["cuda_available"] = torch.cuda.is_available()
+        if info["cuda_available"]:
+            info["gpu_name"] = torch.cuda.get_device_name(0)
+    except ImportError:
+        pass
+    return info

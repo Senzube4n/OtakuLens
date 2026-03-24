@@ -78,7 +78,8 @@ async def pipeline_ws(websocket: WebSocket, chapter_id: str):
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "version": "0.1.0"}
+    from backend.config import get_gpu_info
+    return {"status": "ok", "version": "0.1.0", "gpu": get_gpu_info()}
 
 
 @app.get("/api/languages")

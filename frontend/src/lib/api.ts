@@ -91,15 +91,56 @@ export const getRelationships = (seriesId: string) =>
 // Reading
 export const getReadingProgress = (seriesId: string) =>
   fetchAPI<{ last_chapter_number: number; last_page_number: number } | null>(`/reading/${seriesId}/progress`);
-export const updateReadingProgress = (seriesId: string, chapter: number, page?: number) =>
-  fetchAPI(`/reading/${seriesId}/progress`, {
-    method: "PUT",
-    body: JSON.stringify({ chapter_number: chapter, page_number: page || 0 }),
+
+// Debounced reading progress update
+let _progressTimer: ReturnType<typeof setTimeout> | null = null;
+export const updateReadingProgress = (seriesId: string, chapter: number, page?: number): Promise<unknown> => {
+  return new Promise((resolve) => {
+    if (_progressTimer) clearTimeout(_progressTimer);
+    _progressTimer = setTimeout(async () => {
+      try {
+        const result = await fetchAPI(`/reading/${seriesId}/progress`, {
+          method: "PUT",
+          body: JSON.stringify({ chapter_number: chapter, page_number: page || 0 }),
+        });
+        resolve(result);
+      } catch {
+        resolve(null);
+      }
+    }, 2000);
   });
+};
+
+// List all chapters with their pages for infinite scroll
+export async function listAllSeriesChapters(
+  seriesId: string
+): Promise<{ chapter: import("./types").Chapter; pages: import("./types").Page[] }[]> {
+  const chapters = await listChapters(seriesId);
+  const sorted = chapters
+    .filter(ch => ch.status === "completed")
+    .sort((a, b) => a.chapter_number - b.chapter_number);
+
+  // Load all pages in parallel
+  const results = await Promise.all(
+    sorted.map(async (ch) => {
+      try {
+        const pages = await listPages(ch.id);
+        return {
+          chapter: ch,
+          pages: pages.sort((a, b) => a.page_number - b.page_number),
+        };
+      } catch {
+        return { chapter: ch, pages: [] };
+      }
+    })
+  );
+
+  return results.filter(r => r.pages.length > 0);
+}
 
 // Settings
 export const getSettings = () => fetchAPI<import("./types").AppSettings>("/settings");
-export const updateSettings = (data: { anthropic_api_key?: string; default_source_lang?: string; default_target_lang?: string }) =>
+export const updateSettings = (data: { anthropic_api_key?: string; default_source_lang?: string; default_target_lang?: string; compute_mode?: string }) =>
   fetchAPI<import("./types").AppSettings>("/settings", { method: "PUT", body: JSON.stringify(data) });
 
 // Languages

@@ -76,6 +76,7 @@ class SettingsUpdate(BaseModel):
     anthropic_api_key: str | None = None
     default_source_lang: str | None = None
     default_target_lang: str | None = None
+    compute_mode: str | None = None  # "auto", "cpu", or "gpu"
 
 
 class SettingsResponse(BaseModel):
@@ -83,3 +84,6 @@ class SettingsResponse(BaseModel):
     default_source_lang: str
     default_target_lang: str
     claude_model: str
+    compute_mode: str
+    gpu_available: bool
+    using_gpu: bool

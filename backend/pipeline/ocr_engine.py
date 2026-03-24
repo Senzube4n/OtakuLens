@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
-from backend.config import SUPPORTED_LANGUAGES
+from backend.config import SUPPORTED_LANGUAGES, should_use_gpu
 from backend.schemas.pipeline import OCRRegionResult
 
 logger = logging.getLogger(__name__)
@@ -102,8 +102,9 @@ class OCREngine:
             langs = [lang_code]
             if lang_code != "en":
                 langs.append("en")
-            logger.info("Initializing EasyOCR reader for languages: %s", langs)
-            self._easyocr_reader = easyocr.Reader(langs, gpu=True, verbose=False)
+            use_gpu = should_use_gpu()
+            logger.info("Initializing EasyOCR reader for languages: %s (gpu=%s)", langs, use_gpu)
+            self._easyocr_reader = easyocr.Reader(langs, gpu=use_gpu, verbose=False)
 
         raw = self._easyocr_reader.readtext(image_path)
         # EasyOCR returns: list of (bbox_points, text, confidence)
@@ -124,12 +125,13 @@ class OCREngine:
 
         if self._paddleocr_engine is None:
             paddle_lang = self.lang_config.get("paddle_lang", "ch")
-            logger.info("Initializing PaddleOCR for language: %s", paddle_lang)
+            use_gpu = should_use_gpu()
+            logger.info("Initializing PaddleOCR for language: %s (gpu=%s)", paddle_lang, use_gpu)
             self._paddleocr_engine = PaddleOCR(
                 use_angle_cls=True,
                 lang=paddle_lang,
                 show_log=False,
-                use_gpu=True,
+                use_gpu=use_gpu,
             )
 
         raw = self._paddleocr_engine.ocr(image_path, cls=True)
